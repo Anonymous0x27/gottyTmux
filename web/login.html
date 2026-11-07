@@ -1,0 +1,303 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GoTTY - 访问认证</title>
+  <link rel="icon" type="image/png" href="./favicon.png" />
+  <style>
+    :root {
+      --bg-canvas: #0d1117;
+      --bg-surface: #161b22;
+      --bg-elevated: #1c2128;
+      --border-default: #30363d;
+      --text-primary: #e6edf3;
+      --text-secondary: #8b949e;
+      --accent-blue: #2f81f7;
+      --btn-green: #238636;
+      --btn-green-hover: #2ea043;
+      --danger-red: #f85149;
+      --danger-bg: rgba(248, 81, 73, 0.14);
+      --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      background-color: var(--bg-canvas);
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .login-wrapper {
+      width: 100%;
+      max-width: 400px;
+      padding: 20px;
+    }
+
+    .login-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-default);
+      border-radius: 12px;
+      padding: 28px 26px 24px;
+      box-shadow: 0 18px 48px rgba(0, 0, 0, 0.55);
+    }
+
+    .brand-header {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    .lock-badge {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      background: rgba(47, 129, 247, 0.14);
+      border: 1px solid rgba(47, 129, 247, 0.35);
+      color: var(--accent-blue);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 14px;
+    }
+
+    .brand-header h1 {
+      margin: 0;
+      font-size: 19px;
+      font-weight: 600;
+    }
+
+    .brand-header p {
+      margin: 6px 0 0;
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .field-label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .input-group {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .password-input {
+      width: 100%;
+      padding: 10px 42px 10px 12px;
+      font-size: 14px;
+      font-family: var(--font-mono);
+      color: var(--text-primary);
+      background: var(--bg-canvas);
+      border: 1px solid var(--border-default);
+      border-radius: 6px;
+      outline: none;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .password-input:focus {
+      border-color: var(--accent-blue);
+      box-shadow: 0 0 0 3px rgba(47, 129, 247, 0.22);
+    }
+
+    .toggle-visibility {
+      position: absolute;
+      right: 8px;
+      background: none;
+      border: none;
+      color: var(--text-secondary);
+      cursor: pointer;
+      padding: 4px 6px;
+      font-size: 12px;
+      border-radius: 4px;
+    }
+
+    .toggle-visibility:hover {
+      color: var(--text-primary);
+      background: var(--bg-elevated);
+    }
+
+    .error-box {
+      margin-top: 12px;
+      padding: 9px 12px;
+      border-radius: 6px;
+      background: var(--danger-bg);
+      border: 1px solid rgba(248, 81, 73, 0.45);
+      color: #ffa198;
+      font-size: 13px;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .submit-btn {
+      margin-top: 18px;
+      width: 100%;
+      padding: 10px 16px;
+      font-size: 14px;
+      font-weight: 600;
+      font-family: inherit;
+      color: #ffffff;
+      background: var(--btn-green);
+      border: 1px solid rgba(240, 246, 252, 0.1);
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background-color 0.15s ease;
+    }
+
+    .submit-btn:hover:not(:disabled) {
+      background: var(--btn-green-hover);
+    }
+
+    .submit-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .footer-note {
+      margin-top: 16px;
+      text-align: center;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+  </style>
+</head>
+<body>
+  <div class="login-wrapper">
+    <div class="login-card">
+      <div class="brand-header">
+        <div class="lock-badge" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+          </svg>
+        </div>
+        <h1>GoTTY Web 访问认证</h1>
+        <p>当前端口已启用口令保护，请输入访问口令继续</p>
+      </div>
+
+      <form id="login-form" method="post" novalidate>
+        <label for="password-input" class="field-label">访问口令 (Password)</label>
+        <div class="input-group">
+          <input
+            type="password"
+            id="password-input"
+            name="password"
+            class="password-input"
+            placeholder="请输入认证口令..."
+            autocomplete="current-password"
+            autofocus
+            required
+          />
+          <button type="button" id="toggle-btn" class="toggle-visibility" aria-label="切换口令显示">显示</button>
+        </div>
+
+        <div id="error-box" class="error-box hidden" role="alert"></div>
+
+        <button type="submit" id="submit-btn" class="submit-btn">解锁进入</button>
+      </form>
+
+      <div class="footer-note">GoTTY Web Terminal &amp; TMUX Manager</div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      "use strict";
+      var form = document.getElementById("login-form");
+      var input = document.getElementById("password-input");
+      var toggleBtn = document.getElementById("toggle-btn");
+      var errorBox = document.getElementById("error-box");
+      var submitBtn = document.getElementById("submit-btn");
+
+      var params = new URLSearchParams(window.location.search);
+      var nextTarget = params.get("next") || "";
+
+      toggleBtn.addEventListener("click", function () {
+        if (input.type === "password") {
+          input.type = "text";
+          toggleBtn.textContent = "隐藏";
+        } else {
+          input.type = "password";
+          toggleBtn.textContent = "显示";
+        }
+        input.focus();
+      });
+
+      function showError(msg) {
+        errorBox.textContent = msg;
+        errorBox.classList.remove("hidden");
+      }
+
+      form.addEventListener("submit", function (ev) {
+        ev.preventDefault();
+        var pwd = input.value;
+        if (!pwd) {
+          showError("请输入访问口令。");
+          input.focus();
+          return;
+        }
+
+        errorBox.classList.add("hidden");
+        submitBtn.disabled = true;
+        submitBtn.textContent = "验证中...";
+
+        fetch(window.location.pathname, {
+          method: "POST",
+          credentials: "same-origin",
+          headers: {
+            "Content-Type": "application/json",
+            "Accept": "application/json"
+          },
+          body: JSON.stringify({
+            password: pwd,
+            next: nextTarget
+          })
+        })
+          .then(function (res) {
+            return res.json().catch(function () { return {}; }).then(function (body) {
+              return { ok: res.ok, status: res.status, body: body };
+            });
+          })
+          .then(function (result) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = "解锁进入";
+
+            if (!result.ok) {
+              showError(result.body.error || "认证口令错误，请重试。");
+              input.select();
+              input.focus();
+              return;
+            }
+
+            var target = (result.body && result.body.redirect) ? result.body.redirect : "./";
+            window.location.replace(target);
+          })
+          .catch(function () {
+            submitBtn.disabled = false;
+            submitBtn.textContent = "解锁进入";
+            showError("网络请求失败，请检查服务连接。");
+          });
+      });
+    })();
+  </script>
+</body>
+</html>

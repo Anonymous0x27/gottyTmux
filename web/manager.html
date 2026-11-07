@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GoTTY TMUX Manager</title>
+  <link rel="icon" type="image/png" href="./favicon.png" />
+  <link rel="stylesheet" href="./css/manager.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-icon" aria-hidden="true">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="4 17 10 11 4 5"></polyline>
+            <line x1="12" y1="19" x2="20" y2="19"></line>
+          </svg>
+        </div>
+        <div>
+          <h1 class="brand-title">GoTTY TMUX Manager</h1>
+          <p class="brand-subtitle">Persistent Web Terminal &amp; Session Control Panel</p>
+        </div>
+      </div>
+
+      <div class="topbar-controls">
+        <span id="server-badge" class="server-badge server-checking" title="tmux server status">
+          <span class="dot"></span>
+          <span id="server-badge-text">Checking tmux...</span>
+        </span>
+        <label class="auto-refresh-toggle" title="Toggle automatic refresh every 5 seconds">
+          <input type="checkbox" id="auto-refresh-checkbox" checked />
+          <span>Auto-refresh</span>
+        </label>
+        <button type="button" id="refresh-btn" class="btn btn-secondary">
+          <svg id="refresh-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="23 4 23 10 17 10"></polyline>
+            <polyline points="1 20 1 14 7 14"></polyline>
+            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+          </svg>
+          <span>Refresh</span>
+        </button>
+        <button type="button" id="logout-btn" class="btn btn-danger hidden" title="Sign out of Web session">
+          <span>Logout</span>
+        </button>
+      </div>
+    </header>
+
+    <section class="stats-grid" aria-label="Session Statistics">
+      <div class="stat-card">
+        <span class="stat-label">Total Sessions</span>
+        <span id="stat-total" class="stat-value">0</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Attached</span>
+        <span id="stat-attached" class="stat-value stat-value-attached">0</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Detached</span>
+        <span id="stat-detached" class="stat-value stat-value-detached">0</span>
+      </div>
+    </section>
+
+    <div id="error-banner" class="alert alert-error hidden" role="alert">
+      <div class="alert-content">
+        <strong>Request Failed:</strong>
+        <span id="error-banner-message"></span>
+      </div>
+      <button type="button" id="error-retry-btn" class="btn btn-sm btn-secondary">Retry</button>
+    </div>
+
+    <main class="panel">
+      <div class="panel-header">
+        <div class="panel-heading">
+          <h2>Sessions</h2>
+          <span id="last-updated" class="last-updated"></span>
+        </div>
+        <button type="button" id="open-create-btn" class="btn btn-primary">
+          + Create Session
+        </button>
+      </div>
+
+      <div class="table-container">
+        <table id="sessions-table" class="sessions-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Windows</th>
+              <th>Status</th>
+              <th class="col-actions">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="sessions-tbody">
+            <tr class="loading-row">
+              <td colspan="4">Loading sessions...</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div id="empty-state" class="empty-state hidden">
+          <div class="empty-icon" aria-hidden="true">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+              <line x1="8" y1="21" x2="16" y2="21"></line>
+              <line x1="12" y1="17" x2="12" y2="21"></line>
+            </svg>
+          </div>
+          <h3>No Active tmux Sessions</h3>
+          <p>Create a new persistent tmux session below, or visit <code>/&lt;session-name&gt;</code> directly to auto-create and attach.</p>
+          <button type="button" id="empty-create-btn" class="btn btn-primary">+ Create Session</button>
+        </div>
+      </div>
+
+      <div class="panel-footer">
+        <button type="button" id="footer-create-btn" class="btn btn-primary">
+          + Create Session
+        </button>
+        <span class="footer-hint">Closing a browser tab only detaches the client; tmux sessions keep running in the background.</span>
+      </div>
+    </main>
+  </div>
+
+  <!-- Create Session Modal -->
+  <div id="create-modal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="create-modal-title">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="create-modal-title">Create tmux Session</h3>
+        <button type="button" id="create-modal-close" class="icon-close" aria-label="Close">&times;</button>
+      </div>
+      <form id="create-session-form" novalidate>
+        <div class="modal-body">
+          <label for="session-name-input" class="field-label">Session Name</label>
+          <input
+            type="text"
+            id="session-name-input"
+            class="text-input"
+            placeholder="e.g. codex"
+            maxlength="128"
+            autocomplete="off"
+            spellcheck="false"
+            required
+          />
+          <p class="field-hint">Allowed characters: letters, digits, <code>_</code>, <code>.</code>, <code>-</code> (e.g. <code>aaa</code>, <code>codex</code>, <code>jarvis</code>).</p>
+          <div id="create-modal-error" class="inline-error hidden" role="alert"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" id="create-cancel-btn" class="btn btn-secondary">Cancel</button>
+          <button type="submit" id="create-submit-btn" data-open="false" class="btn btn-secondary">Create</button>
+          <button type="button" id="create-and-open-btn" class="btn btn-primary">Create &amp; Open</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Kill Session Confirmation Modal -->
+  <div id="kill-modal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="kill-modal-title">
+    <div class="modal modal-danger">
+      <div class="modal-header">
+        <h3 id="kill-modal-title">Kill tmux Session</h3>
+        <button type="button" id="kill-modal-close" class="icon-close" aria-label="Close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p id="kill-confirm-question" class="confirm-question"></p>
+        <div class="warning-box">
+          <strong>Process Termination Warning:</strong>
+          Killing this session will immediately terminate all windows and running processes inside <code id="kill-session-code"></code>. This action cannot be undone.
+        </div>
+        <div id="kill-modal-error" class="inline-error hidden" role="alert"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" id="kill-cancel-btn" class="btn btn-secondary">Cancel</button>
+        <button type="button" id="kill-confirm-btn" class="btn btn-danger-solid">Kill Session</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toast-container" class="toast-container" aria-live="polite"></div>
+
+  <script src="./js/manager.js"></script>
+</body>
+</html>
