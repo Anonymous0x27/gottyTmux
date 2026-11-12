@@ -8,6 +8,9 @@ GoTTY 是一款轻量级、单二进制文件的 Web 终端服务工具。本项
 ![Login](images/login.png)
 ![Main](images/main.png )
 
+使用场景：在原版gotty的网页中使用codex,claude等程序时，如果网络问题或刷新网页会导致运行的程序被结束，所以结合gotty+tmux开发了这个项目
+![Example](images/example.png)
+
 ---
 
 ## 目录
